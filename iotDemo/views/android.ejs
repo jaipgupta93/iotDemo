@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Salesforce IoT Quick Demo</title>
+
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+    <script src="/js/moment.min.js"></script>
+
+    <!-- Pusher -->
+    <script src="https://js.pusher.com/2.2/pusher.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var pusher = new Pusher('<%= pusher_key %>');
+        var channel = pusher.subscribe('<%= uid %>');
+        channel.bind('battery', function (data) {
+            if(data.mode == 'signal') {
+                var value = navigator.battery.level * 100;
+                $.ajax({
+                    url: "/api/pusher?event=battery&mode=measure&value=" + value + "&uid=<%= uid %>",
+                    type: "get",
+                    async: false,
+                    success: function (data) {
+                    }
+                });
+            }
+        });
+
+        channel.bind('vibrate', function (data) {
+            navigator.vibrate(4000);
+        });
+    </script>
+    <!-- Pusher -->
+
+    <style>
+        p.resizeimage img { width: 100%; }
+    </style>
+
+</head>
+
+<body bgcolor="black">
+<p class="resizeimage">
+    <img src="/images/pi_client.jpg"/>
+</p>
+
+
+</body>
+
+<script src="/js/modernizr-2.6.2.min.js"></script>
+
+<script>
+
+    var value = 0;
+    function successGeolocation(pos) {
+        var crd = pos.coords;
+        lat = crd.latitude;
+        lon = crd.longitude;
+        sendDataToHeroku(lat, lon);
+    }
+
+    function errorGeolocation(err) {
+        alert('Can not take geolocation value so use default which you set at heroku console. (' + err.code + '): ' + err.message);
+        sendDataToHeroku(<%= lat %>, <%= lon %>);
+    }
+
+    function light(event) {
+        value = event.value;
+    }
+
+    function sendDataToHeroku(lat, lon) {
+        setInterval(function () {
+            $.ajax({
+                type: "POST",
+                url: "/api/series",
+                data: {
+                    "value": value,
+                    "uid": "<%= uid %>",
+                    "created_at": moment().format(),
+                    "latitude": lat,
+                    "longitude": lon
+                },
+                success: function(j_data){
+                    console.log("GET: /api/series success " +value);
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    console.log("Failed : GET /api/series  " + textStatus);
+                    console.log("Error: " + errorThrown);
+                }
+            });
+
+        }, 3000);
+    }
+
+
+    $(function () {
+
+        if ("vibrate" in navigator) {
+        } else {
+            alert("Your browser does not support vibrate. Only mobile Firefox on Andorid supports vibrate.");
+        }
+
+        if (navigator.geolocation) {
+        } else {
+            alert("Your browser does not support Geolocation so please change one!");
+        }
+
+        setTimeout(scrollTo, 100, 0, 1);
+        window.addEventListener('devicelight', light);
+
+        navigator.geolocation.getCurrentPosition(successGeolocation, errorGeolocation, {timeout: 3000});
+    });
+
+
+</script>
+</html>

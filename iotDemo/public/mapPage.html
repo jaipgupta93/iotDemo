@@ -1,0 +1,239 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Salesforce IoT Quick Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap-theme.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js">
+    </script>
+    <!-- ↓font追加-->
+    <link href='http://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
+
+    <!-- ↓css追加-->
+<style>
+    .container{
+        z-index: 1001;
+        top: -250px;
+        position: relative;
+    }
+    .myfont{
+        font-family: 'Montserrat', sans-serif;
+    }
+    .header-background{
+        z-index: 1000;
+        height:250px;
+
+        background: #197ec1; /* Old browsers */
+        background: -moz-linear-gradient(top,  #197ec1 0%, #85b9dc 33%, #ffffff 100%); /* FF3.6+ */
+        background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#197ec1), color-stop(33%,#85b9dc), color-stop(100%,#ffffff)); /* Chrome,Safari4+ */
+        background: -webkit-linear-gradient(top,  #197ec1 0%,#85b9dc 33%,#ffffff 100%); /* Chrome10+,Safari5.1+ */
+        background: -o-linear-gradient(top,  #197ec1 0%,#85b9dc 33%,#ffffff 100%); /* Opera 11.10+ */
+        background: -ms-linear-gradient(top,  #197ec1 0%,#85b9dc 33%,#ffffff 100%); /* IE10+ */
+        background: linear-gradient(to bottom,  #197ec1 0%,#85b9dc 33%,#ffffff 100%); /* W3C */
+        filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#197ec1', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+    }
+
+    .myHeader{
+        background-image: url('../images/map-headerImage.png'); 
+        background-size : 100% 100%;
+        background-repeat: no-repeat;
+        
+        background-position: left top;
+        border-radius: 0;
+        height: 250px;
+    }
+
+    #title{
+        text-align: center;
+        padding-top: 70px;
+        font-size: 80px;
+        color: rgb(29, 32, 136);
+    }
+
+    #mapWrapper{
+        margin: 0 auto 24px auto;
+        padding: 8px;
+        width: 816px;
+        height:516px;
+        background: #cbe9f7; /* Old browsers */
+        background: -moz-linear-gradient(top,  #cbe9f7 0%, #00add3 100%); /* FF3.6+ */
+        background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cbe9f7), color-stop(100%,#00add3)); /* Chrome,Safari4+ */
+        background: -webkit-linear-gradient(top,  #cbe9f7 0%,#00add3 100%); /* Chrome10+,Safari5.1+ */
+        background: -o-linear-gradient(top,  #cbe9f7 0%,#00add3 100%); /* Opera 11.10+ */
+        background: -ms-linear-gradient(top,  #cbe9f7 0%,#00add3 100%); /* IE10+ */
+        background: linear-gradient(to bottom,  #cbe9f7 0%,#00add3 100%); /* W3C */
+        filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cbe9f7', endColorstr='#00add3',GradientType=0 ); /* IE6-9 */
+
+    }
+    #mapDiv{
+        width: 800px;
+        height:500px;
+    }
+</style>
+</head>
+
+<body>
+<div class="header-background"></div>
+
+<div class="container">
+
+    <div class="row clearfix">
+        <div class="col-md-12 column myHeader">
+            <div id="title" class="myfont">salesforce</div>
+        </div>
+    </div>
+
+    <div class="row clearfix">
+        <div class="col-md-12 column">
+            <div id="mapWrapper">
+                <div id="mapDiv" style=""></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row clearfix">
+        <div class="col-md-12 column">
+            <p>
+                Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris
+                condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis
+                euismod. Donec sed odio dui.
+            </p>
+            
+            <a href='/thing/ID35142' target="_blank">new device</a></dd></dl>
+            
+        </div>
+    </div>
+</div>
+<script>
+    function forwardDeviceInfoPage(id) {
+        var pathArray = document.referrer.split( '/' );
+        var protocol = pathArray[0];
+        var host = pathArray[2];
+        var url = protocol + '//' + host;
+        window.parent.location.href = url + "/" + id;
+    }
+</script>
+
+<script>
+    jQuery(function ($) {
+        var ns = google.maps,
+                listUrl  = "/api/locations",
+                detailUrl  = "not_implemented",
+                markers = [],
+                mapOptions = {
+                    zoom: 13,
+                    center: new ns.LatLng(35.665595, 139.739)
+                },
+                map = new ns.Map($("#mapDiv")[0], mapOptions);
+
+        function detailShow(data) {
+            var info;
+            if (data.success !== true) {
+                return;
+            }
+            info = data.info;
+            console.log(info.id);
+        }
+
+        function getDetailInfo(id) {
+            $.ajax({
+                url: detailUrl,
+                dataType: "json",
+                data: {
+                    id: id
+                },
+                type: "GET"
+            }).done(detailShow);
+        }
+
+        function showConsole() {
+            console.log('console');
+        }
+
+
+        function placeMarker(id, info) {
+            var position = new ns.LatLng(info.latitude, info.longitude),
+                    marker = new ns.Marker({position: position, map: map, title: "aki"});
+
+
+            
+                var contentString="<dl id='infowin1'><dt>" + info.uid + "</dt><dd>aki<a href='/cockpit/" + info.uid + "'>こちら</a></dd></dl>";
+            
+
+            //var contentString="<dl id='infowin1'><dt>" + info.uid + "</dt><dd>aki<a href='/cockpit/" + info.uid + "'>こちら</a></dd></dl>";
+            //var contentString = "<dl id='infowin1'><dt>" + info.uid + "</dt><dd><a href=\"javascript:forwardDeviceInfoPage('" + info.uid + "')\"\>こちら</a></dd></dl>";
+
+            var infowindow=new google.maps.InfoWindow({
+                content: contentString
+            });
+
+
+            ns.event.addListener(marker, 'click', function () {
+                infowindow.open(map,marker);
+            });
+            markers[id] = marker;
+        }
+
+        function listAll(data) {
+            var id, i, newLen,
+                    shops = [],
+                    newStore = [];
+
+            shops = data;
+            newLen = shops.length;
+
+            for (i = 0; i < newLen; i = i + 1) {
+                id = shops[i].uid;
+                newStore[id] = 1;
+            }
+
+            for (id in markers) {
+                if (!newStore[id]) {
+                    markers[id].setMap(null);
+                    delete markers[id];
+                }
+            }
+
+            for (i = 0; i < newLen; i = i + 1) {
+                id = shops[i].uid;
+                if (!markers[id]) {
+                    placeMarker(id, shops[i]);
+                }
+            }
+        }
+
+        function getTarget() {
+            var latLngBounds = map.getBounds(),
+                    northEast = latLngBounds.getNorthEast(),
+                    southWest = latLngBounds.getSouthWest();
+
+            $.ajax({
+                url: listUrl,
+                dataType: "json",
+                data: {
+                    neLat: northEast.lat(),
+                    neLng: northEast.lng(),
+                    swLat: southWest.lat(),
+                    swLng: southWest.lng()
+                },
+                type: "GET"
+            }).done(listAll);
+        }
+
+        ns.event.addListener(map, 'idle', getTarget);
+
+    });
+</script>
+</body>
+</html>
+

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+
+    <title>Salesforce IoT Quick Demo</title>
+
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+    <script src="/js/moment.min.js"></script>
+    <!-- Pusher -->
+    <script src="https://js.pusher.com/2.2/pusher.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var pusher = new Pusher('cf6d30cb11a9b6255d0f');
+        var channel = pusher.subscribe('<%= uid %>');
+        channel.bind('led', function (data) {
+            alert('Receive signal with data : ' + data.value);
+        });
+    </script>
+    <!-- Pusher -->
+</head>
+
+<input type="text" id="value" value="20" />
+
+</body>
+
+<script>
+
+
+    function successGeolocation(pos) {
+        var crd = pos.coords;
+        lat = crd.latitude;
+        lon = crd.longitude;
+        sendDataToHeroku(lat, lon);
+    }
+
+    function errorGeolocation(err) {
+        alert('Can not take geolocation value so use default which you set at heroku console. (' + err.code + '): ' + err.message);
+        sendDataToHeroku(<%= lat %>, <%= lon %>);
+    }
+
+    function sendDataToHeroku(lat, lon) {
+        setInterval(function () {
+            $.ajax({
+                type: "POST",
+                url: "/api/series",
+                data: {
+                    "value": $('#value').val(),
+                    "uid": "<%= uid %>",
+                    "created_at": moment().format(),
+                    "latitude": lat,
+                    "longitude": lon
+                },
+                success: function(j_data){
+                    console.log("GET: /api/series success " +value);
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    console.log("Failed : GET /api/series  " + textStatus);
+                    console.log("Error: " + errorThrown);
+                }
+            });
+
+        }, 3000);
+    }
+
+
+    $(function () {
+        if (!navigator.geolocation) {
+            alert("Your browser does not support Geolocation so please change one!");
+        }
+
+        setTimeout(scrollTo, 100, 0, 1);
+        navigator.geolocation.getCurrentPosition(successGeolocation, errorGeolocation, {timeout: 3000});
+    });
+
+
+</script>
+</html>

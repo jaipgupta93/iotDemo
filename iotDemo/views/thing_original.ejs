@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Salesforce IoT Quick Demo</title>
+
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+    <!-- Pusher -->
+    <script src="https://js.pusher.com/2.2/pusher.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var pusher = new Pusher('<%= pusher_key %>');
+        var channel = pusher.subscribe('<%= uid %>');
+        channel.bind('led', function (data) {
+            $('#led').attr('src', "/images/led" + data.value + ".png");
+        });
+    </script>
+    <!-- Pusher -->
+
+    <link rel="stylesheet" href="/css/circular-slider.min.css" />
+    <script src="/js/circular-slider.min.js"></script>
+    <!--<script src="/js/geolocation.js"></script>-->
+
+
+
+
+
+</head>
+
+<body>
+<img id="led" style="width: 15%; height: 15%" src="/images/ledoff.png">
+<div id="slider"></div>
+</body>
+<script>
+    var lat, lon;
+
+    function get_now() {
+        return new Date().toISOString();
+    }
+
+    function get_data() {
+        return halfCircularSlider.getValue();
+    }
+
+
+
+    function successLocation(pos) {
+        var crd = pos.coords;
+        lat = crd.latitude;
+        lon = crd.longitude;
+        console.log('Your current position is:');
+        console.log('Latitude : ' + crd.latitude);
+        console.log('Longitude: ' + crd.longitude);
+        console.log('More or less ' + crd.accuracy + ' meters.');
+    };
+
+    function errorLocation(err) {
+        alert('Can not receive Geolocation(' + err.code + '): ' + err.message);
+    };
+
+    $(function() {
+        var options = {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        };
+        navigator.geolocation.getCurrentPosition(successLocation, errorLocation, options);
+    });
+
+
+    $(function () {
+        halfCircularSlider = $('#slider').CircularSlider({
+            min : 0,
+            max: 50,
+            value : 23,
+            labelSuffix: "℃",
+            shape: "Half Circle",
+            slide : function(value) {
+                if (value < 50) {
+                    //ui.next().css({'background' : 'rgba(250, 81, 81,' + ((100 - value) / 100) + ')'});
+                } else {
+                //    ui.next().css({'background' : 'rgba(87, 250, 87,' + (value / 100) + ')'});
+                }
+            }
+        });
+    });
+
+    $(function () {
+        setInterval(function () {
+            $.ajax({
+                type: "POST",
+                url: "/api/series",
+                data: {
+                    "value": get_data(),
+                    "uid": "<%= uid %>",
+                    "created_at": get_now(),
+                    "latitude": lat,
+                    "longitude": lon
+                },
+                success: function(j_data){
+                    console.log("GET: /api/series success " +get_data());
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    console.log("Failed : GET /api/series  " + textStatus);
+                    console.log("Error: " + errorThrown);
+                }
+            });
+
+        }, 3000);
+    });
+</script>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+
+    <title>Salesforce IoT Quick Demo</title>
+
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+    <script src="/js/moment.min.js"></script>
+    <!-- Pusher -->
+    <script src="https://js.pusher.com/2.2/pusher.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var pusher = new Pusher('cf6d30cb11a9b6255d0f');
+        var channel = pusher.subscribe('<%= uid %>');
+        channel.bind('led', function (data) {
+            alert('Receive signal with data : ' + data.value);
+        });
+    </script>
+    <!-- Pusher -->
+
+
+
+
+
+
+</head>
+
+<input type="text" id="value" value="20" />
+
+</body>
+
+<script>
+    var lat, lon;
+
+    function get_data() {
+        var value = $('#value').val();
+        return value;
+    }
+
+    function successLocation(pos) {
+        var crd = pos.coords;
+        lat = crd.latitude;
+        lon = crd.longitude;
+        console.log('Your current position is:');
+        console.log('Latitude : ' + crd.latitude);
+        console.log('Longitude: ' + crd.longitude);
+        console.log('More or less ' + crd.accuracy + ' meters.');
+    };
+
+    function errorLocation(err) {
+        alert('Can not receive Geolocation(' + err.code + '): ' + err.message);
+    };
+
+
+    $(function() {
+        var options = {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        };
+        navigator.geolocation.getCurrentPosition(successLocation, errorLocation, options);
+    });
+
+
+    $(function () {
+        setInterval(function () {
+            $.ajax({
+                type: "POST",
+                url: "/api/series",
+                data: {
+                    "value": get_data(),
+                    "uid": "<%= uid %>",
+                    "created_at": moment().format(),
+                    "latitude": lat,
+                    "longitude": lon
+                },
+                success: function(j_data){
+                    console.log("GET: /api/series success " +get_data());
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    console.log("Failed : GET /api/series  " + textStatus);
+                    console.log("Error: " + errorThrown);
+                }
+            });
+
+        }, 3000);
+    });
+</script>
+</html>

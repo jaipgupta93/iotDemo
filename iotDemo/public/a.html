@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <title>Salesforce IoT Quick Demo</title>
+
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+    <!-- Pusher -->
+    <script src="https://js.pusher.com/2.2/pusher.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var pusher = new Pusher('cf6d30cb11a9b6255d0f');
+        var channel = pusher.subscribe('a');
+        channel.bind('led', function (data) {
+            $('#led').attr('src', "../images/led" + data.value + ".png");
+        });
+    </script>
+    <!-- Pusher -->
+
+    <link rel="stylesheet" href="../css/circular-slider.min.css" />
+    <script src="../js/circular-slider.min.js"></script>
+    <script src="../js/geolocation.js"></script>
+
+<style>
+    html{
+        overflow: hidden;
+        min-height: 440px;
+    }
+
+    body{ 
+        overflow: hidden;
+        height: 100%;
+        min-height: 440px;
+        width: 100%;
+        margin: 0;
+        background-image: url('/images/background.png');
+        background-size : 100% 100%;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-position: left top;
+    }
+    .jcs{
+        border-color:rgb(168, 169, 172);
+    }
+    .jcs-value{
+        background-image: url('/images/blackflame.png');
+        background-size : 100% 100%;
+        background-repeat: no-repeat;
+        background-color: black;
+        background-position: left top;
+        height: 50px !important;
+        border-radius: 0;
+        line-height: 50px;
+        border:0;
+
+    }
+    .jcs-indicator{
+        background-image: url('/images/indicator.png');
+        background-size : 20px 20px;
+        background-repeat: no-repeat;
+        background-position: left top;
+        background-color: rgba(255,255,255,0);
+        border: 1px solid gray;
+        box-shadow: 1px 1px 1px rgba(0,0,0,0.4);
+    }
+
+    #ledWrapper{
+        margin: 80px calc(50% - 80px) 0;
+    }
+    #ledWrapper img{
+        width:160px;
+        height:160px;
+    }
+    #sliderWrapper{
+        margin: 74px calc(50% - 110px) 0;
+        height: 100px;
+    }
+    #slider{
+        width:220px;
+    }
+</style>
+
+
+</head>
+
+<body ontouchmove="event.preventDefault()">
+    <div id="container">
+        <div id="ledWrapper">
+            <img id="led" src="../images/ledalert.png" />
+<!--
+            <img id="led" src="../images/ledoff.png" />
+            <img id="led" src="../images/ledon.png" /> 
+            切り替え: $('#led').attr('src', '../images/ledon.png')
+-->
+        </div>
+        <div id="sliderWrapper">
+            <div id="slider"></div>
+        </div>
+    </div>
+
+</body>
+<script>
+    function get_now() {
+        return new Date().toISOString();
+    }
+
+    function get_data() {
+        return halfCircularSlider.getValue();
+    }
+    /*
+
+    function success(pos) {
+        var crd = pos.coords;
+        lat = crd.latitude;
+        lon = crd.longitude;
+        console.log('Your current position is:');
+        console.log('Latitude : ' + crd.latitude);
+        console.log('Longitude: ' + crd.longitude);
+        console.log('More or less ' + crd.accuracy + ' meters.');
+    };
+
+    function error(err) {
+        alert('Can not receive Geolocation(' + err.code + '): ' + err.message);
+    };
+
+    $(function() {
+        var options = {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        };
+        navigator.geolocation.getCurrentPosition(success, error, options);
+    });
+    */
+
+    $(function () {
+
+        halfCircularSlider = $('#slider').CircularSlider({
+            radius: 100,
+            min : 0,
+            max: 50,
+            value : 23,
+            labelSuffix: "℃",
+            shape: "Half Circle",
+            slide : function(value) {
+                if (value < 50) {
+                    //ui.next().css({'background' : 'rgba(250, 81, 81,' + ((100 - value) / 100) + ')'});
+                } else {
+                //    ui.next().css({'background' : 'rgba(87, 250, 87,' + (value / 100) + ')'});
+                }
+            }
+        });
+    });
+
+    $(function () {
+        setInterval(function () {
+            $.ajax({
+                type: "POST",
+                url: "/api/series",
+                data: {
+                    "value": get_data(),
+                    "uid": "a",
+                    "created_at": get_now(),
+                    "latitude": lat,
+                    "longitude": lon
+                },
+                success: function(j_data){
+                    console.log("GET: /api/series success " +get_data());
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    console.log("Failed : GET /api/series  " + textStatus);
+                    console.log("Error: " + errorThrown);
+                }
+            });
+
+        }, 3000);
+    });
+</script>
+</html>
